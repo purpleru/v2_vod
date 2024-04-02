@@ -13,6 +13,7 @@
 				<view class="cover-box">
 					<view class="cover" v-for="vod_list in vod_item.vod_lists">
 						<image :src="vod_list.vod_pic" @click="imageClick(vod_list)" mode="scaleToFill"></image>
+						<text>{{vod_list.vod_name}}</text>
 					</view>
 				</view>
 
@@ -217,7 +218,6 @@
 
 	.cover {
 		width: calc(100% / 3 - 10px);
-		height: 330rpx;
 		margin-bottom: 10px;
 		// overflow: hidden;
 		// background-color: aliceblue;
@@ -225,7 +225,18 @@
 
 	.cover image {
 		width: 100%;
-		height: 100%;
+		height: 330rpx;
 		border-radius: 6px;
+	}
+	
+	.cover text{
+		display: block;
+		width: 100%;
+		font-size: 14px;
+		font-weight: 500;
+		text-align: center;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
 	}
 </style>

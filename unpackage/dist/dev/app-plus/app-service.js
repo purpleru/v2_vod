@@ -672,13 +672,13 @@ if (uni.restoreGlobal) {
           height
         }) => {
           if (detail.scrollHeight - height === Math.floor(detail.scrollTop)) {
-            formatAppLog("log", "at pages/index/index.vue:106", "到底了");
+            formatAppLog("log", "at pages/index/index.vue:107", "到底了");
             let load = vue.toRef(vod_item, "load");
             load.value.status = "loading";
             setList({
               index: currentIndex.value
             });
-            formatAppLog("log", "at pages/index/index.vue:114", currentIndex.value);
+            formatAppLog("log", "at pages/index/index.vue:115", currentIndex.value);
           }
         }).exec();
       }
@@ -688,7 +688,7 @@ if (uni.restoreGlobal) {
         }
       }
       function imageClick(list) {
-        formatAppLog("log", "at pages/index/index.vue:130", list);
+        formatAppLog("log", "at pages/index/index.vue:131", list);
         getApp().globalData.play = list;
         uni.navigateTo({
           url: "/pages/play?age=888"
@@ -720,14 +720,14 @@ if (uni.restoreGlobal) {
           });
           tabs.value = tabLists;
           setList(tabLists[currentIndex.value]);
-          formatAppLog("log", "at pages/index/index.vue:168", tabs);
+          formatAppLog("log", "at pages/index/index.vue:169", tabs);
         }
       });
       onPageScroll(() => {
-        formatAppLog("log", "at pages/index/index.vue:173", 888);
+        formatAppLog("log", "at pages/index/index.vue:174", 888);
       });
       onReachBottom(() => {
-        formatAppLog("log", "at pages/index/index.vue:177", "到底了");
+        formatAppLog("log", "at pages/index/index.vue:178", "到底了");
       });
       return (_ctx, _cache) => {
         const _component_u_tabs = resolveEasycom(vue.resolveDynamicComponent("u-tabs"), __easycom_0$2);
@@ -760,7 +760,14 @@ if (uni.restoreGlobal) {
                             src: vod_list.vod_pic,
                             onClick: ($event) => imageClick(vod_list),
                             mode: "scaleToFill"
-                          }, null, 8, ["src", "onClick"])
+                          }, null, 8, ["src", "onClick"]),
+                          vue.createElementVNode(
+                            "text",
+                            null,
+                            vue.toDisplayString(vod_list.vod_name),
+                            1
+                            /* TEXT */
+                          )
                         ]);
                       }),
                       256

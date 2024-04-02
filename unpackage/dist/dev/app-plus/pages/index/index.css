@@ -260,11 +260,20 @@ uni-page-body[data-v-1cf27b2a] {
 }
 .cover[data-v-1cf27b2a] {
   width: calc(33.3333333333% - 10px);
-  height: 10.3125rem;
   margin-bottom: 10px;
 }
 .cover uni-image[data-v-1cf27b2a] {
   width: 100%;
-  height: 100%;
+  height: 10.3125rem;
   border-radius: 6px;
+}
+.cover uni-text[data-v-1cf27b2a] {
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }

@@ -1,6 +1,12 @@
 <template>
 	<view class="content">
+		<!-- #ifdef H5 -->
+		<iframe :src="iframeSrc" frameborder="0"></iframe>
+		<!-- #endif -->
+
+		<!-- #ifndef H5 -->
 		<video class="video" :src="src"></video>
+		<!-- #endif -->
 		<view class="play-list">
 			<u-button v-for="(item,index) in vodPlayList" @click="lineClick(item)" :text="index" :plain="true"
 				:hairline="true"></u-button>
@@ -23,7 +29,8 @@
 	} from '@dcloudio/uni-app';
 
 	import {
-		ref
+		ref,
+		computed
 	} from 'vue';
 
 	var vodPlayList = ref([]);
@@ -31,6 +38,10 @@
 	let currentList = ref([]);
 
 	let src = ref('');
+
+	let iframeSrc = computed(() => {
+		return 'http://bf.wgudu.com/player/?url=' + src.value;
+	});
 
 	function parsePlayUrl(url = '') {
 		let playList = url.split('$$$').map(vodUrls => {
@@ -105,5 +116,10 @@
 	.play-list-button--current {
 		border: #e74032 1px solid;
 		color: #e74032;
+	}
+
+	iframe {
+		width: 100%;
+		height: 375rpx;
 	}
 </style>
