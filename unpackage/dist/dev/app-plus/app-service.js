@@ -50,932 +50,6 @@ if (uni.restoreGlobal) {
   const onLoad = /* @__PURE__ */ createHook(ON_LOAD);
   const onPageScroll = /* @__PURE__ */ createHook(ON_PAGE_SCROLL);
   const onReachBottom = /* @__PURE__ */ createHook(ON_REACH_BOTTOM);
-  const props$5 = {
-    props: {
-      // 是否显示圆点
-      isDot: {
-        type: Boolean,
-        default: () => uni.$u.props.badge.isDot
-      },
-      // 显示的内容
-      value: {
-        type: [Number, String],
-        default: () => uni.$u.props.badge.value
-      },
-      // 显示的内容
-      modelValue: {
-        type: [Number, String],
-        default: () => uni.$u.props.badge.modelValue
-      },
-      // 是否显示
-      show: {
-        type: Boolean,
-        default: () => uni.$u.props.badge.show
-      },
-      // 最大值，超过最大值会显示 '{max}+'
-      max: {
-        type: [Number, String],
-        default: () => uni.$u.props.badge.max
-      },
-      // 主题类型，error|warning|success|primary
-      type: {
-        type: String,
-        default: () => uni.$u.props.badge.type
-      },
-      // 当数值为 0 时，是否展示 Badge
-      showZero: {
-        type: Boolean,
-        default: () => uni.$u.props.badge.showZero
-      },
-      // 背景颜色，优先级比type高，如设置，type参数会失效
-      bgColor: {
-        type: [String, null],
-        default: () => uni.$u.props.badge.bgColor
-      },
-      // 字体颜色
-      color: {
-        type: [String, null],
-        default: () => uni.$u.props.badge.color
-      },
-      // 徽标形状，circle-四角均为圆角，horn-左下角为直角
-      shape: {
-        type: String,
-        default: () => uni.$u.props.badge.shape
-      },
-      // 设置数字的显示方式，overflow|ellipsis|limit
-      // overflow会根据max字段判断，超出显示`${max}+`
-      // ellipsis会根据max判断，超出显示`${max}...`
-      // limit会依据1000作为判断条件，超出1000，显示`${value/1000}K`，比如2.2k、3.34w，最多保留2位小数
-      numberType: {
-        type: String,
-        default: () => uni.$u.props.badge.numberType
-      },
-      // 设置badge的位置偏移，格式为 [x, y]，也即设置的为top和right的值，absolute为true时有效
-      offset: {
-        type: Array,
-        default: () => uni.$u.props.badge.offset
-      },
-      // 是否反转背景和字体颜色
-      inverted: {
-        type: Boolean,
-        default: () => uni.$u.props.badge.inverted
-      },
-      // 是否绝对定位
-      absolute: {
-        type: Boolean,
-        default: () => uni.$u.props.badge.absolute
-      }
-    }
-  };
-  const mpMixin = {};
-  const mixin = {
-    // 定义每个组件都可能需要用到的外部样式以及类名
-    props: {
-      // 每个组件都有的父组件传递的样式，可以为字符串或者对象形式
-      customStyle: {
-        type: [Object, String],
-        default: () => ({})
-      },
-      customClass: {
-        type: String,
-        default: ""
-      },
-      // 跳转的页面路径
-      url: {
-        type: String,
-        default: ""
-      },
-      // 页面跳转的类型
-      linkType: {
-        type: String,
-        default: "navigateTo"
-      }
-    },
-    data() {
-      return {};
-    },
-    onLoad() {
-      this.$u.getRect = this.$uGetRect;
-    },
-    created() {
-      this.$u.getRect = this.$uGetRect;
-    },
-    computed: {
-      // 在2.x版本中，将会把$u挂载到uni对象下，导致在模板中无法使用uni.$u.xxx形式
-      // 所以这里通过computed计算属性将其附加到this.$u上，就可以在模板或者js中使用uni.$u.xxx
-      // 只在nvue环境通过此方式引入完整的$u，其他平台会出现性能问题，非nvue则按需引入（主要原因是props过大）
-      $u() {
-        return uni.$u.deepMerge(uni.$u, {
-          props: void 0,
-          http: void 0,
-          mixin: void 0
-        });
-      },
-      /**
-       * 生成bem规则类名
-       * 由于微信小程序，H5，nvue之间绑定class的差异，无法通过:class="[bem()]"的形式进行同用
-       * 故采用如下折中做法，最后返回的是数组（一般平台）或字符串（支付宝和字节跳动平台），类似['a', 'b', 'c']或'a b c'的形式
-       * @param {String} name 组件名称
-       * @param {Array} fixed 一直会存在的类名
-       * @param {Array} change 会根据变量值为true或者false而出现或者隐藏的类名
-       * @returns {Array|string}
-       */
-      bem() {
-        return function(name, fixed, change) {
-          const prefix = `u-${name}--`;
-          const classes = {};
-          if (fixed) {
-            fixed.map((item) => {
-              classes[prefix + this[item]] = true;
-            });
-          }
-          if (change) {
-            change.map((item) => {
-              this[item] ? classes[prefix + item] = this[item] : delete classes[prefix + item];
-            });
-          }
-          return Object.keys(classes);
-        };
-      }
-    },
-    methods: {
-      // 跳转某一个页面
-      openPage(urlKey = "url") {
-        const url2 = this[urlKey];
-        if (url2) {
-          this.$u.route({ type: this.linkType, url: url2 });
-        }
-      },
-      // 查询节点信息
-      // 目前此方法在支付宝小程序中无法获取组件跟接点的尺寸，为支付宝的bug(2020-07-21)
-      // 解决办法为在组件根部再套一个没有任何作用的view元素
-      $uGetRect(selector, all) {
-        return new Promise((resolve) => {
-          uni.createSelectorQuery().in(this)[all ? "selectAll" : "select"](selector).boundingClientRect((rect) => {
-            if (all && Array.isArray(rect) && rect.length) {
-              resolve(rect);
-            }
-            if (!all && rect) {
-              resolve(rect);
-            }
-          }).exec();
-        });
-      },
-      getParentData(parentName = "") {
-        if (!this.parent)
-          this.parent = {};
-        this.parent = uni.$u.$parent.call(this, parentName);
-        if (this.parent.children) {
-          this.parent.children.indexOf(this) === -1 && this.parent.children.push(this);
-        }
-        if (this.parent && this.parentData) {
-          Object.keys(this.parentData).map((key) => {
-            this.parentData[key] = this.parent[key];
-          });
-        }
-      },
-      // 阻止事件冒泡
-      preventEvent(e) {
-        e && typeof e.stopPropagation === "function" && e.stopPropagation();
-      },
-      // 空操作
-      noop(e) {
-        this.preventEvent(e);
-      }
-    },
-    onReachBottom() {
-      uni.$emit("uOnReachBottom");
-    },
-    beforeDestroy() {
-      if (this.parent && uni.$u.test.array(this.parent.children)) {
-        const childrenList = this.parent.children;
-        childrenList.map((child, index2) => {
-          if (child === this) {
-            childrenList.splice(index2, 1);
-          }
-        });
-      }
-    }
-  };
-  const _export_sfc = (sfc, props2) => {
-    const target = sfc.__vccOpts || sfc;
-    for (const [key, val] of props2) {
-      target[key] = val;
-    }
-    return target;
-  };
-  const _sfc_main$8 = {
-    name: "u-badge",
-    mixins: [mpMixin, props$5, mixin],
-    computed: {
-      // 是否将badge中心与父组件右上角重合
-      boxStyle() {
-        let style = {};
-        return style;
-      },
-      // 整个组件的样式
-      badgeStyle() {
-        const style = {};
-        if (this.color) {
-          style.color = this.color;
-        }
-        if (this.bgColor && !this.inverted) {
-          style.backgroundColor = this.bgColor;
-        }
-        if (this.absolute) {
-          style.position = "absolute";
-          if (this.offset.length) {
-            const top = this.offset[0];
-            const right = this.offset[1] || top;
-            style.top = uni.$u.addUnit(top);
-            style.right = uni.$u.addUnit(right);
-          }
-        }
-        return style;
-      },
-      showValue() {
-        switch (this.numberType) {
-          case "overflow":
-            return Number(this.value) > Number(this.max) ? this.max + "+" : this.value;
-          case "ellipsis":
-            return Number(this.value) > Number(this.max) ? "..." : this.value;
-          case "limit":
-            return Number(this.value) > 999 ? Number(this.value) >= 9999 ? Math.floor(this.value / 1e4 * 100) / 100 + "w" : Math.floor(this.value / 1e3 * 100) / 100 + "k" : this.value;
-          default:
-            return Number(this.value);
-        }
-      }
-    }
-  };
-  function _sfc_render$5(_ctx, _cache, $props, $setup, $data, $options) {
-    return _ctx.show && ((Number(_ctx.value) === 0 ? _ctx.showZero : true) || _ctx.isDot) ? (vue.openBlock(), vue.createElementBlock(
-      "text",
-      {
-        key: 0,
-        class: vue.normalizeClass([[_ctx.isDot ? "u-badge--dot" : "u-badge--not-dot", _ctx.inverted && "u-badge--inverted", _ctx.shape === "horn" && "u-badge--horn", `u-badge--${_ctx.type}${_ctx.inverted ? "--inverted" : ""}`], "u-badge"]),
-        style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.customStyle), $options.badgeStyle])
-      },
-      vue.toDisplayString(_ctx.isDot ? "" : $options.showValue),
-      7
-      /* TEXT, CLASS, STYLE */
-    )) : vue.createCommentVNode("v-if", true);
-  }
-  const __easycom_0$3 = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["render", _sfc_render$5], ["__scopeId", "data-v-aa9883b1"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-badge/u-badge.vue"]]);
-  const props$4 = {
-    props: {
-      // 滑块的移动过渡时间，单位ms
-      duration: {
-        type: Number,
-        default: () => uni.$u.props.tabs.duration
-      },
-      // tabs标签数组
-      list: {
-        type: Array,
-        default: () => uni.$u.props.tabs.list
-      },
-      // 滑块颜色
-      lineColor: {
-        type: String,
-        default: () => uni.$u.props.tabs.lineColor
-      },
-      // 菜单选择中时的样式
-      activeStyle: {
-        type: [String, Object],
-        default: () => uni.$u.props.tabs.activeStyle
-      },
-      // 菜单非选中时的样式
-      inactiveStyle: {
-        type: [String, Object],
-        default: () => uni.$u.props.tabs.inactiveStyle
-      },
-      // 滑块长度
-      lineWidth: {
-        type: [String, Number],
-        default: () => uni.$u.props.tabs.lineWidth
-      },
-      // 滑块高度
-      lineHeight: {
-        type: [String, Number],
-        default: () => uni.$u.props.tabs.lineHeight
-      },
-      // 滑块背景显示大小，当滑块背景设置为图片时使用
-      lineBgSize: {
-        type: String,
-        default: () => uni.$u.props.tabs.lineBgSize
-      },
-      // 菜单item的样式
-      itemStyle: {
-        type: [String, Object],
-        default: () => uni.$u.props.tabs.itemStyle
-      },
-      // 菜单是否可滚动
-      scrollable: {
-        type: Boolean,
-        default: () => uni.$u.props.tabs.scrollable
-      },
-      // 当前选中标签的索引
-      current: {
-        type: [Number, String],
-        default: () => uni.$u.props.tabs.current
-      },
-      // 默认读取的键名
-      keyName: {
-        type: String,
-        default: () => uni.$u.props.tabs.keyName
-      }
-    }
-  };
-  const _sfc_main$7 = {
-    name: "u-tabs",
-    mixins: [mpMixin, mixin, props$4],
-    data() {
-      return {
-        firstTime: true,
-        scrollLeft: 0,
-        scrollViewWidth: 0,
-        lineOffsetLeft: 0,
-        tabsRect: {
-          left: 0
-        },
-        innerCurrent: 0,
-        moving: false
-      };
-    },
-    watch: {
-      current: {
-        immediate: true,
-        handler(newValue, oldValue) {
-          if (newValue !== this.innerCurrent) {
-            this.innerCurrent = newValue;
-            this.$nextTick(() => {
-              this.resize();
-            });
-          }
-        }
-      },
-      // list变化时，重新渲染list各项信息
-      list() {
-        this.$nextTick(() => {
-          this.resize();
-        });
-      }
-    },
-    computed: {
-      textStyle() {
-        return (index2) => {
-          const style = {};
-          const customeStyle = index2 === this.innerCurrent ? uni.$u.addStyle(this.activeStyle) : uni.$u.addStyle(
-            this.inactiveStyle
-          );
-          if (this.list[index2].disabled) {
-            style.color = "#c8c9cc";
-          }
-          return uni.$u.deepMerge(customeStyle, style);
-        };
-      },
-      propsBadge() {
-        return uni.$u.props.badge;
-      }
-    },
-    async mounted() {
-      this.init();
-    },
-    emits: ["click", "change"],
-    methods: {
-      setLineLeft() {
-        const tabItem = this.list[this.innerCurrent];
-        if (!tabItem) {
-          return;
-        }
-        let lineOffsetLeft = this.list.slice(0, this.innerCurrent).reduce((total, curr) => total + curr.rect.width, 0);
-        const lineWidth = uni.$u.getPx(this.lineWidth);
-        this.lineOffsetLeft = lineOffsetLeft + (tabItem.rect.width - lineWidth) / 2;
-        if (this.firstTime) {
-          setTimeout(() => {
-            this.firstTime = false;
-          }, 10);
-        }
-      },
-      // nvue下设置滑块的位置
-      animation(x, duration = 0) {
-      },
-      // 点击某一个标签
-      clickHandler(item, index2) {
-        this.$emit("click", {
-          ...item,
-          index: index2
-        });
-        if (item.disabled)
-          return;
-        this.innerCurrent = index2;
-        this.resize();
-        this.$emit("change", {
-          ...item,
-          index: index2
-        });
-      },
-      init() {
-        uni.$u.sleep().then(() => {
-          this.resize();
-        });
-      },
-      setScrollLeft() {
-        const tabRect = this.list[this.innerCurrent];
-        const offsetLeft = this.list.slice(0, this.innerCurrent).reduce((total, curr) => {
-          return total + curr.rect.width;
-        }, 0);
-        const windowWidth = uni.$u.sys().windowWidth;
-        let scrollLeft = offsetLeft - (this.tabsRect.width - tabRect.rect.width) / 2 - (windowWidth - this.tabsRect.right) / 2 + this.tabsRect.left / 2;
-        scrollLeft = Math.min(scrollLeft, this.scrollViewWidth - this.tabsRect.width);
-        this.scrollLeft = Math.max(0, scrollLeft);
-      },
-      // 获取所有标签的尺寸
-      resize() {
-        if (this.list.length === 0) {
-          return;
-        }
-        Promise.all([this.getTabsRect(), this.getAllItemRect()]).then(([tabsRect, itemRect = []]) => {
-          this.tabsRect = tabsRect;
-          this.scrollViewWidth = 0;
-          itemRect.map((item, index2) => {
-            this.scrollViewWidth += item.width;
-            this.list[index2].rect = item;
-          });
-          this.setLineLeft();
-          this.setScrollLeft();
-        });
-      },
-      // 获取导航菜单的尺寸
-      getTabsRect() {
-        return new Promise((resolve) => {
-          this.queryRect("u-tabs__wrapper__scroll-view").then((size) => resolve(size));
-        });
-      },
-      // 获取所有标签的尺寸
-      getAllItemRect() {
-        return new Promise((resolve) => {
-          const promiseAllArr = this.list.map((item, index2) => this.queryRect(
-            `u-tabs__wrapper__nav__item-${index2}`,
-            true
-          ));
-          Promise.all(promiseAllArr).then((sizes) => resolve(sizes));
-        });
-      },
-      // 获取各个标签的尺寸
-      queryRect(el, item) {
-        return new Promise((resolve) => {
-          this.$uGetRect(`.${el}`).then((size) => {
-            resolve(size);
-          });
-        });
-      }
-    }
-  };
-  function _sfc_render$4(_ctx, _cache, $props, $setup, $data, $options) {
-    const _component_u_badge = resolveEasycom(vue.resolveDynamicComponent("u-badge"), __easycom_0$3);
-    return vue.openBlock(), vue.createElementBlock("view", { class: "u-tabs" }, [
-      vue.createElementVNode("view", { class: "u-tabs__wrapper" }, [
-        vue.renderSlot(_ctx.$slots, "left", {}, void 0, true),
-        vue.createElementVNode("view", { class: "u-tabs__wrapper__scroll-view-wrapper" }, [
-          vue.createElementVNode("scroll-view", {
-            "scroll-x": _ctx.scrollable,
-            "scroll-left": $data.scrollLeft,
-            "scroll-with-animation": "",
-            class: "u-tabs__wrapper__scroll-view",
-            "show-scrollbar": false,
-            ref: "u-tabs__wrapper__scroll-view"
-          }, [
-            vue.createElementVNode(
-              "view",
-              {
-                class: "u-tabs__wrapper__nav",
-                ref: "u-tabs__wrapper__nav"
-              },
-              [
-                (vue.openBlock(true), vue.createElementBlock(
-                  vue.Fragment,
-                  null,
-                  vue.renderList(_ctx.list, (item, index2) => {
-                    return vue.openBlock(), vue.createElementBlock("view", {
-                      class: vue.normalizeClass(["u-tabs__wrapper__nav__item", [`u-tabs__wrapper__nav__item-${index2}`, item.disabled && "u-tabs__wrapper__nav__item--disabled"]]),
-                      key: index2,
-                      onClick: ($event) => $options.clickHandler(item, index2),
-                      ref_for: true,
-                      ref: `u-tabs__wrapper__nav__item-${index2}`,
-                      style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.itemStyle), { flex: _ctx.scrollable ? "" : 1 }])
-                    }, [
-                      vue.createElementVNode(
-                        "text",
-                        {
-                          class: vue.normalizeClass([[item.disabled && "u-tabs__wrapper__nav__item__text--disabled"], "u-tabs__wrapper__nav__item__text"]),
-                          style: vue.normalizeStyle([$options.textStyle(index2)])
-                        },
-                        vue.toDisplayString(item[_ctx.keyName]),
-                        7
-                        /* TEXT, CLASS, STYLE */
-                      ),
-                      vue.createVNode(_component_u_badge, {
-                        show: !!(item.badge && (item.badge.show || item.badge.isDot || item.badge.value)),
-                        isDot: item.badge && item.badge.isDot || $options.propsBadge.isDot,
-                        value: item.badge && item.badge.value || $options.propsBadge.value,
-                        max: item.badge && item.badge.max || $options.propsBadge.max,
-                        type: item.badge && item.badge.type || $options.propsBadge.type,
-                        showZero: item.badge && item.badge.showZero || $options.propsBadge.showZero,
-                        bgColor: item.badge && item.badge.bgColor || $options.propsBadge.bgColor,
-                        color: item.badge && item.badge.color || $options.propsBadge.color,
-                        shape: item.badge && item.badge.shape || $options.propsBadge.shape,
-                        numberType: item.badge && item.badge.numberType || $options.propsBadge.numberType,
-                        inverted: item.badge && item.badge.inverted || $options.propsBadge.inverted,
-                        customStyle: "margin-left: 4px;"
-                      }, null, 8, ["show", "isDot", "value", "max", "type", "showZero", "bgColor", "color", "shape", "numberType", "inverted"])
-                    ], 14, ["onClick"]);
-                  }),
-                  128
-                  /* KEYED_FRAGMENT */
-                )),
-                vue.createElementVNode(
-                  "view",
-                  {
-                    class: "u-tabs__wrapper__nav__line",
-                    ref: "u-tabs__wrapper__nav__line",
-                    style: vue.normalizeStyle([{
-                      width: _ctx.$u.addUnit(_ctx.lineWidth),
-                      transform: `translate(${$data.lineOffsetLeft}px)`,
-                      transitionDuration: `${$data.firstTime ? 0 : _ctx.duration}ms`,
-                      height: _ctx.$u.addUnit(_ctx.lineHeight),
-                      background: _ctx.lineColor,
-                      backgroundSize: _ctx.lineBgSize
-                    }])
-                  },
-                  null,
-                  4
-                  /* STYLE */
-                )
-              ],
-              512
-              /* NEED_PATCH */
-            )
-          ], 8, ["scroll-x", "scroll-left"])
-        ]),
-        vue.renderSlot(_ctx.$slots, "right", {}, void 0, true)
-      ])
-    ]);
-  }
-  const __easycom_0$2 = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["render", _sfc_render$4], ["__scopeId", "data-v-0546c3e4"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-tabs/u-tabs.vue"]]);
-  const _sfc_main$6 = {
-    __name: "index",
-    setup(__props) {
-      let tabs = vue.ref([]);
-      let currentIndex = vue.ref(0);
-      function getList(typeID, pg, ids) {
-        return uni.request({
-          url: "/api.php/provide/vod",
-          data: {
-            ac: "detail",
-            ids,
-            t: typeID,
-            pg: pg || 1
-          }
-        });
-      }
-      function tabChange(data) {
-        currentIndex.value = data.index;
-      }
-      function handlePage(page2 = {}) {
-        let currentPage = Math.abs(page2.page) + 1;
-        return currentPage;
-      }
-      async function setList(data = {}) {
-        let currentTab = tabs.value[data.index];
-        let {
-          data: {
-            list,
-            page: page2,
-            pagecount,
-            total,
-            limit
-          }
-        } = await getList(currentTab.type_id, handlePage(currentTab.page));
-        currentTab.page = {
-          page: page2,
-          pagecount,
-          total,
-          limit
-        };
-        currentTab.vod_lists = currentTab.vod_lists.concat(list);
-      }
-      function scroll(instance, event, vod_item) {
-        const query = uni.createSelectorQuery().in(instance), {
-          detail
-        } = event;
-        query.select(".current-tab").boundingClientRect(({
-          height
-        }) => {
-          if (detail.scrollHeight - height === Math.floor(detail.scrollTop)) {
-            formatAppLog("log", "at pages/index/index.vue:107", "到底了");
-            let load = vue.toRef(vod_item, "load");
-            load.value.status = "loading";
-            setList({
-              index: currentIndex.value
-            });
-            formatAppLog("log", "at pages/index/index.vue:115", currentIndex.value);
-          }
-        }).exec();
-      }
-      async function click(data) {
-        if (data.type_id !== 999 && data.vod_lists.length === 0) {
-          setList(data);
-        }
-      }
-      function imageClick(list) {
-        formatAppLog("log", "at pages/index/index.vue:131", list);
-        getApp().globalData.play = list;
-        uni.navigateTo({
-          url: "/pages/play?age=888"
-        });
-      }
-      uni.request({
-        url: "/api.php/provide/vod",
-        data: {
-          ac: "list"
-        },
-        success({
-          data
-        }) {
-          let tabLists = data.class.map((item, index2) => {
-            item.name = item.type_name;
-            item.vod_lists = [];
-            item.index = index2;
-            item.page = {
-              page: 0,
-              pagecount: 0,
-              total: 0,
-              limit: 0
-            };
-            item.load = {
-              status: "loadmore",
-              line: false
-            };
-            return item;
-          });
-          tabs.value = tabLists;
-          setList(tabLists[currentIndex.value]);
-          formatAppLog("log", "at pages/index/index.vue:169", tabs);
-        }
-      });
-      onPageScroll(() => {
-        formatAppLog("log", "at pages/index/index.vue:174", 888);
-      });
-      onReachBottom(() => {
-        formatAppLog("log", "at pages/index/index.vue:178", "到底了");
-      });
-      return (_ctx, _cache) => {
-        const _component_u_tabs = resolveEasycom(vue.resolveDynamicComponent("u-tabs"), __easycom_0$2);
-        return vue.openBlock(), vue.createElementBlock("view", { class: "content" }, [
-          vue.createVNode(_component_u_tabs, {
-            list: vue.unref(tabs),
-            current: vue.unref(currentIndex),
-            onClick: click,
-            onChange: tabChange
-          }, null, 8, ["list", "current"]),
-          vue.createElementVNode("view", { class: "vod-body" }, [
-            (vue.openBlock(true), vue.createElementBlock(
-              vue.Fragment,
-              null,
-              vue.renderList(vue.unref(tabs), (vod_item, index2) => {
-                return vue.withDirectives((vue.openBlock(), vue.createElementBlock("scroll-view", {
-                  class: vue.normalizeClass(["vod-body--item", { "current-tab": index2 === vue.unref(currentIndex) }]),
-                  "scroll-y": true,
-                  "show-scrollbar": true,
-                  onScroll: ($event) => scroll(this, $event, vod_item)
-                }, [
-                  vue.createCommentVNode(' 			<view v-for="vod_list in vod_item.vod_lists">\r\n					<image :src="vod_list.vod_pic" @click="imageClick(vod_list)"></image>\r\n				</view> '),
-                  vue.createElementVNode("view", { class: "cover-box" }, [
-                    (vue.openBlock(true), vue.createElementBlock(
-                      vue.Fragment,
-                      null,
-                      vue.renderList(vod_item.vod_lists, (vod_list) => {
-                        return vue.openBlock(), vue.createElementBlock("view", { class: "cover" }, [
-                          vue.createElementVNode("image", {
-                            src: vod_list.vod_pic,
-                            onClick: ($event) => imageClick(vod_list),
-                            mode: "scaleToFill"
-                          }, null, 8, ["src", "onClick"]),
-                          vue.createElementVNode(
-                            "text",
-                            null,
-                            vue.toDisplayString(vod_list.vod_name),
-                            1
-                            /* TEXT */
-                          )
-                        ]);
-                      }),
-                      256
-                      /* UNKEYED_FRAGMENT */
-                    ))
-                  ]),
-                  vue.createCommentVNode(' <u-loadmore :status="vod_item.load.status" /> ')
-                ], 42, ["onScroll"])), [
-                  [vue.vShow, index2 === vue.unref(currentIndex)]
-                ]);
-              }),
-              256
-              /* UNKEYED_FRAGMENT */
-            ))
-          ])
-        ]);
-      };
-    }
-  };
-  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-1cf27b2a"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/index/index.vue"]]);
-  const _sfc_main$5 = {};
-  function _sfc_render$3(_ctx, _cache) {
-    return vue.openBlock(), vue.createElementBlock("div", null, " home ");
-  }
-  const PagesIndexHome = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["render", _sfc_render$3], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/index/home.vue"]]);
-  const props$3 = {
-    props: {
-      // 是否显示组件
-      show: {
-        type: Boolean,
-        default: () => uni.$u.props.loadingIcon.show
-      },
-      // 颜色
-      color: {
-        type: String,
-        default: () => uni.$u.props.loadingIcon.color
-      },
-      // 提示文字颜色
-      textColor: {
-        type: String,
-        default: () => uni.$u.props.loadingIcon.textColor
-      },
-      // 文字和图标是否垂直排列
-      vertical: {
-        type: Boolean,
-        default: () => uni.$u.props.loadingIcon.vertical
-      },
-      // 模式选择，circle-圆形，spinner-花朵形，semicircle-半圆形
-      mode: {
-        type: String,
-        default: () => uni.$u.props.loadingIcon.mode
-      },
-      // 图标大小，单位默认px
-      size: {
-        type: [String, Number],
-        default: () => uni.$u.props.loadingIcon.size
-      },
-      // 文字大小
-      textSize: {
-        type: [String, Number],
-        default: () => uni.$u.props.loadingIcon.textSize
-      },
-      // 文字内容
-      text: {
-        type: [String, Number],
-        default: () => uni.$u.props.loadingIcon.text
-      },
-      // 动画模式
-      timingFunction: {
-        type: String,
-        default: () => uni.$u.props.loadingIcon.timingFunction
-      },
-      // 动画执行周期时间
-      duration: {
-        type: [String, Number],
-        default: () => uni.$u.props.loadingIcon.duration
-      },
-      // mode=circle时的暗边颜色
-      inactiveColor: {
-        type: String,
-        default: () => uni.$u.props.loadingIcon.inactiveColor
-      }
-    }
-  };
-  const _sfc_main$4 = {
-    name: "u-loading-icon",
-    mixins: [mpMixin, mixin, props$3],
-    data() {
-      return {
-        // Array.form可以通过一个伪数组对象创建指定长度的数组
-        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/from
-        array12: Array.from({
-          length: 12
-        }),
-        // 这里需要设置默认值为360，否则在安卓nvue上，会延迟一个duration周期后才执行
-        // 在iOS nvue上，则会一开始默认执行两个周期的动画
-        aniAngel: 360,
-        // 动画旋转角度
-        webviewHide: false,
-        // 监听webview的状态，如果隐藏了页面，则停止动画，以免性能消耗
-        loading: false
-        // 是否运行中，针对nvue使用
-      };
-    },
-    computed: {
-      // 当为circle类型时，给其另外三边设置一个更轻一些的颜色
-      // 之所以需要这么做的原因是，比如父组件传了color为红色，那么需要另外的三个边为浅红色
-      // 而不能是固定的某一个其他颜色(因为这个固定的颜色可能浅蓝，导致效果没有那么细腻良好)
-      otherBorderColor() {
-        const lightColor = uni.$u.colorGradient(this.color, "#ffffff", 100)[80];
-        if (this.mode === "circle") {
-          return this.inactiveColor ? this.inactiveColor : lightColor;
-        } else {
-          return "transparent";
-        }
-      }
-    },
-    watch: {
-      show(n) {
-      }
-    },
-    mounted() {
-      this.init();
-    },
-    methods: {
-      init() {
-        setTimeout(() => {
-          this.show && this.addEventListenerToWebview();
-        }, 20);
-      },
-      // 监听webview的显示与隐藏
-      addEventListenerToWebview() {
-        const pages2 = getCurrentPages();
-        const page2 = pages2[pages2.length - 1];
-        const currentWebview = page2.$getAppWebview();
-        currentWebview.addEventListener("hide", () => {
-          this.webviewHide = true;
-        });
-        currentWebview.addEventListener("show", () => {
-          this.webviewHide = false;
-        });
-      }
-    }
-  };
-  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
-    return _ctx.show ? (vue.openBlock(), vue.createElementBlock(
-      "view",
-      {
-        key: 0,
-        class: vue.normalizeClass(["u-loading-icon", [_ctx.vertical && "u-loading-icon--vertical"]]),
-        style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.customStyle)])
-      },
-      [
-        !$data.webviewHide ? (vue.openBlock(), vue.createElementBlock(
-          "view",
-          {
-            key: 0,
-            class: vue.normalizeClass(["u-loading-icon__spinner", [`u-loading-icon__spinner--${_ctx.mode}`]]),
-            ref: "ani",
-            style: vue.normalizeStyle({
-              color: _ctx.color,
-              width: _ctx.$u.addUnit(_ctx.size),
-              height: _ctx.$u.addUnit(_ctx.size),
-              borderTopColor: _ctx.color,
-              borderBottomColor: $options.otherBorderColor,
-              borderLeftColor: $options.otherBorderColor,
-              borderRightColor: $options.otherBorderColor,
-              "animation-duration": `${_ctx.duration}ms`,
-              "animation-timing-function": _ctx.mode === "semicircle" || _ctx.mode === "circle" ? _ctx.timingFunction : ""
-            })
-          },
-          [
-            _ctx.mode === "spinner" ? (vue.openBlock(true), vue.createElementBlock(
-              vue.Fragment,
-              { key: 0 },
-              vue.renderList($data.array12, (item, index2) => {
-                return vue.openBlock(), vue.createElementBlock("view", {
-                  key: index2,
-                  class: "u-loading-icon__dot"
-                });
-              }),
-              128
-              /* KEYED_FRAGMENT */
-            )) : vue.createCommentVNode("v-if", true)
-          ],
-          6
-          /* CLASS, STYLE */
-        )) : vue.createCommentVNode("v-if", true),
-        _ctx.text ? (vue.openBlock(), vue.createElementBlock(
-          "text",
-          {
-            key: 1,
-            class: "u-loading-icon__text",
-            style: vue.normalizeStyle({
-              fontSize: _ctx.$u.addUnit(_ctx.textSize),
-              color: _ctx.textColor
-            })
-          },
-          vue.toDisplayString(_ctx.text),
-          5
-          /* TEXT, STYLE */
-        )) : vue.createCommentVNode("v-if", true)
-      ],
-      6
-      /* CLASS, STYLE */
-    )) : vue.createCommentVNode("v-if", true);
-  }
-  const __easycom_0$1 = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["render", _sfc_render$2], ["__scopeId", "data-v-00752c6d"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-loading-icon/u-loading-icon.vue"]]);
   const icons = {
     "uicon-level": "",
     "uicon-column-line": "",
@@ -1190,7 +264,7 @@ if (uni.restoreGlobal) {
     "uicon-zh": "",
     "uicon-en": ""
   };
-  const props$2 = {
+  const props$5 = {
     props: {
       // 图标类名
       name: {
@@ -1279,13 +353,150 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  const _sfc_main$3 = {
+  const mpMixin = {};
+  const mixin = {
+    // 定义每个组件都可能需要用到的外部样式以及类名
+    props: {
+      // 每个组件都有的父组件传递的样式，可以为字符串或者对象形式
+      customStyle: {
+        type: [Object, String],
+        default: () => ({})
+      },
+      customClass: {
+        type: String,
+        default: ""
+      },
+      // 跳转的页面路径
+      url: {
+        type: String,
+        default: ""
+      },
+      // 页面跳转的类型
+      linkType: {
+        type: String,
+        default: "navigateTo"
+      }
+    },
+    data() {
+      return {};
+    },
+    onLoad() {
+      this.$u.getRect = this.$uGetRect;
+    },
+    created() {
+      this.$u.getRect = this.$uGetRect;
+    },
+    computed: {
+      // 在2.x版本中，将会把$u挂载到uni对象下，导致在模板中无法使用uni.$u.xxx形式
+      // 所以这里通过computed计算属性将其附加到this.$u上，就可以在模板或者js中使用uni.$u.xxx
+      // 只在nvue环境通过此方式引入完整的$u，其他平台会出现性能问题，非nvue则按需引入（主要原因是props过大）
+      $u() {
+        return uni.$u.deepMerge(uni.$u, {
+          props: void 0,
+          http: void 0,
+          mixin: void 0
+        });
+      },
+      /**
+       * 生成bem规则类名
+       * 由于微信小程序，H5，nvue之间绑定class的差异，无法通过:class="[bem()]"的形式进行同用
+       * 故采用如下折中做法，最后返回的是数组（一般平台）或字符串（支付宝和字节跳动平台），类似['a', 'b', 'c']或'a b c'的形式
+       * @param {String} name 组件名称
+       * @param {Array} fixed 一直会存在的类名
+       * @param {Array} change 会根据变量值为true或者false而出现或者隐藏的类名
+       * @returns {Array|string}
+       */
+      bem() {
+        return function(name, fixed, change) {
+          const prefix = `u-${name}--`;
+          const classes = {};
+          if (fixed) {
+            fixed.map((item) => {
+              classes[prefix + this[item]] = true;
+            });
+          }
+          if (change) {
+            change.map((item) => {
+              this[item] ? classes[prefix + item] = this[item] : delete classes[prefix + item];
+            });
+          }
+          return Object.keys(classes);
+        };
+      }
+    },
+    methods: {
+      // 跳转某一个页面
+      openPage(urlKey = "url") {
+        const url2 = this[urlKey];
+        if (url2) {
+          this.$u.route({ type: this.linkType, url: url2 });
+        }
+      },
+      // 查询节点信息
+      // 目前此方法在支付宝小程序中无法获取组件跟接点的尺寸，为支付宝的bug(2020-07-21)
+      // 解决办法为在组件根部再套一个没有任何作用的view元素
+      $uGetRect(selector, all) {
+        return new Promise((resolve) => {
+          uni.createSelectorQuery().in(this)[all ? "selectAll" : "select"](selector).boundingClientRect((rect) => {
+            if (all && Array.isArray(rect) && rect.length) {
+              resolve(rect);
+            }
+            if (!all && rect) {
+              resolve(rect);
+            }
+          }).exec();
+        });
+      },
+      getParentData(parentName = "") {
+        if (!this.parent)
+          this.parent = {};
+        this.parent = uni.$u.$parent.call(this, parentName);
+        if (this.parent.children) {
+          this.parent.children.indexOf(this) === -1 && this.parent.children.push(this);
+        }
+        if (this.parent && this.parentData) {
+          Object.keys(this.parentData).map((key) => {
+            this.parentData[key] = this.parent[key];
+          });
+        }
+      },
+      // 阻止事件冒泡
+      preventEvent(e) {
+        e && typeof e.stopPropagation === "function" && e.stopPropagation();
+      },
+      // 空操作
+      noop(e) {
+        this.preventEvent(e);
+      }
+    },
+    onReachBottom() {
+      uni.$emit("uOnReachBottom");
+    },
+    beforeDestroy() {
+      if (this.parent && uni.$u.test.array(this.parent.children)) {
+        const childrenList = this.parent.children;
+        childrenList.map((child, index2) => {
+          if (child === this) {
+            childrenList.splice(index2, 1);
+          }
+        });
+      }
+    }
+  };
+  const _export_sfc = (sfc, props2) => {
+    const target = sfc.__vccOpts || sfc;
+    for (const [key, val] of props2) {
+      target[key] = val;
+    }
+    return target;
+  };
+  const _sfc_main$9 = {
     name: "u-icon",
     data() {
       return {};
     },
     emits: ["click"],
-    mixins: [mpMixin, mixin, props$2],
+    mixins: [mpMixin, mixin, props$5],
     computed: {
       uClasses() {
         let classes = [];
@@ -1336,7 +547,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$6(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock(
       "view",
       {
@@ -1380,7 +591,830 @@ if (uni.restoreGlobal) {
       /* CLASS */
     );
   }
-  const __easycom_1 = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["render", _sfc_render$1], ["__scopeId", "data-v-1c933a9a"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-icon/u-icon.vue"]]);
+  const __easycom_1$1 = /* @__PURE__ */ _export_sfc(_sfc_main$9, [["render", _sfc_render$6], ["__scopeId", "data-v-1c933a9a"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-icon/u-icon.vue"]]);
+  const props$4 = {
+    props: {
+      // 是否显示圆点
+      isDot: {
+        type: Boolean,
+        default: () => uni.$u.props.badge.isDot
+      },
+      // 显示的内容
+      value: {
+        type: [Number, String],
+        default: () => uni.$u.props.badge.value
+      },
+      // 显示的内容
+      modelValue: {
+        type: [Number, String],
+        default: () => uni.$u.props.badge.modelValue
+      },
+      // 是否显示
+      show: {
+        type: Boolean,
+        default: () => uni.$u.props.badge.show
+      },
+      // 最大值，超过最大值会显示 '{max}+'
+      max: {
+        type: [Number, String],
+        default: () => uni.$u.props.badge.max
+      },
+      // 主题类型，error|warning|success|primary
+      type: {
+        type: String,
+        default: () => uni.$u.props.badge.type
+      },
+      // 当数值为 0 时，是否展示 Badge
+      showZero: {
+        type: Boolean,
+        default: () => uni.$u.props.badge.showZero
+      },
+      // 背景颜色，优先级比type高，如设置，type参数会失效
+      bgColor: {
+        type: [String, null],
+        default: () => uni.$u.props.badge.bgColor
+      },
+      // 字体颜色
+      color: {
+        type: [String, null],
+        default: () => uni.$u.props.badge.color
+      },
+      // 徽标形状，circle-四角均为圆角，horn-左下角为直角
+      shape: {
+        type: String,
+        default: () => uni.$u.props.badge.shape
+      },
+      // 设置数字的显示方式，overflow|ellipsis|limit
+      // overflow会根据max字段判断，超出显示`${max}+`
+      // ellipsis会根据max判断，超出显示`${max}...`
+      // limit会依据1000作为判断条件，超出1000，显示`${value/1000}K`，比如2.2k、3.34w，最多保留2位小数
+      numberType: {
+        type: String,
+        default: () => uni.$u.props.badge.numberType
+      },
+      // 设置badge的位置偏移，格式为 [x, y]，也即设置的为top和right的值，absolute为true时有效
+      offset: {
+        type: Array,
+        default: () => uni.$u.props.badge.offset
+      },
+      // 是否反转背景和字体颜色
+      inverted: {
+        type: Boolean,
+        default: () => uni.$u.props.badge.inverted
+      },
+      // 是否绝对定位
+      absolute: {
+        type: Boolean,
+        default: () => uni.$u.props.badge.absolute
+      }
+    }
+  };
+  const _sfc_main$8 = {
+    name: "u-badge",
+    mixins: [mpMixin, props$4, mixin],
+    computed: {
+      // 是否将badge中心与父组件右上角重合
+      boxStyle() {
+        let style = {};
+        return style;
+      },
+      // 整个组件的样式
+      badgeStyle() {
+        const style = {};
+        if (this.color) {
+          style.color = this.color;
+        }
+        if (this.bgColor && !this.inverted) {
+          style.backgroundColor = this.bgColor;
+        }
+        if (this.absolute) {
+          style.position = "absolute";
+          if (this.offset.length) {
+            const top = this.offset[0];
+            const right = this.offset[1] || top;
+            style.top = uni.$u.addUnit(top);
+            style.right = uni.$u.addUnit(right);
+          }
+        }
+        return style;
+      },
+      showValue() {
+        switch (this.numberType) {
+          case "overflow":
+            return Number(this.value) > Number(this.max) ? this.max + "+" : this.value;
+          case "ellipsis":
+            return Number(this.value) > Number(this.max) ? "..." : this.value;
+          case "limit":
+            return Number(this.value) > 999 ? Number(this.value) >= 9999 ? Math.floor(this.value / 1e4 * 100) / 100 + "w" : Math.floor(this.value / 1e3 * 100) / 100 + "k" : this.value;
+          default:
+            return Number(this.value);
+        }
+      }
+    }
+  };
+  function _sfc_render$5(_ctx, _cache, $props, $setup, $data, $options) {
+    return _ctx.show && ((Number(_ctx.value) === 0 ? _ctx.showZero : true) || _ctx.isDot) ? (vue.openBlock(), vue.createElementBlock(
+      "text",
+      {
+        key: 0,
+        class: vue.normalizeClass([[_ctx.isDot ? "u-badge--dot" : "u-badge--not-dot", _ctx.inverted && "u-badge--inverted", _ctx.shape === "horn" && "u-badge--horn", `u-badge--${_ctx.type}${_ctx.inverted ? "--inverted" : ""}`], "u-badge"]),
+        style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.customStyle), $options.badgeStyle])
+      },
+      vue.toDisplayString(_ctx.isDot ? "" : $options.showValue),
+      7
+      /* TEXT, CLASS, STYLE */
+    )) : vue.createCommentVNode("v-if", true);
+  }
+  const __easycom_0$2 = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["render", _sfc_render$5], ["__scopeId", "data-v-aa9883b1"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-badge/u-badge.vue"]]);
+  const props$3 = {
+    props: {
+      // 滑块的移动过渡时间，单位ms
+      duration: {
+        type: Number,
+        default: () => uni.$u.props.tabs.duration
+      },
+      // tabs标签数组
+      list: {
+        type: Array,
+        default: () => uni.$u.props.tabs.list
+      },
+      // 滑块颜色
+      lineColor: {
+        type: String,
+        default: () => uni.$u.props.tabs.lineColor
+      },
+      // 菜单选择中时的样式
+      activeStyle: {
+        type: [String, Object],
+        default: () => uni.$u.props.tabs.activeStyle
+      },
+      // 菜单非选中时的样式
+      inactiveStyle: {
+        type: [String, Object],
+        default: () => uni.$u.props.tabs.inactiveStyle
+      },
+      // 滑块长度
+      lineWidth: {
+        type: [String, Number],
+        default: () => uni.$u.props.tabs.lineWidth
+      },
+      // 滑块高度
+      lineHeight: {
+        type: [String, Number],
+        default: () => uni.$u.props.tabs.lineHeight
+      },
+      // 滑块背景显示大小，当滑块背景设置为图片时使用
+      lineBgSize: {
+        type: String,
+        default: () => uni.$u.props.tabs.lineBgSize
+      },
+      // 菜单item的样式
+      itemStyle: {
+        type: [String, Object],
+        default: () => uni.$u.props.tabs.itemStyle
+      },
+      // 菜单是否可滚动
+      scrollable: {
+        type: Boolean,
+        default: () => uni.$u.props.tabs.scrollable
+      },
+      // 当前选中标签的索引
+      current: {
+        type: [Number, String],
+        default: () => uni.$u.props.tabs.current
+      },
+      // 默认读取的键名
+      keyName: {
+        type: String,
+        default: () => uni.$u.props.tabs.keyName
+      }
+    }
+  };
+  const _sfc_main$7 = {
+    name: "u-tabs",
+    mixins: [mpMixin, mixin, props$3],
+    data() {
+      return {
+        firstTime: true,
+        scrollLeft: 0,
+        scrollViewWidth: 0,
+        lineOffsetLeft: 0,
+        tabsRect: {
+          left: 0
+        },
+        innerCurrent: 0,
+        moving: false
+      };
+    },
+    watch: {
+      current: {
+        immediate: true,
+        handler(newValue, oldValue) {
+          if (newValue !== this.innerCurrent) {
+            this.innerCurrent = newValue;
+            this.$nextTick(() => {
+              this.resize();
+            });
+          }
+        }
+      },
+      // list变化时，重新渲染list各项信息
+      list() {
+        this.$nextTick(() => {
+          this.resize();
+        });
+      }
+    },
+    computed: {
+      textStyle() {
+        return (index2) => {
+          const style = {};
+          const customeStyle = index2 === this.innerCurrent ? uni.$u.addStyle(this.activeStyle) : uni.$u.addStyle(
+            this.inactiveStyle
+          );
+          if (this.list[index2].disabled) {
+            style.color = "#c8c9cc";
+          }
+          return uni.$u.deepMerge(customeStyle, style);
+        };
+      },
+      propsBadge() {
+        return uni.$u.props.badge;
+      }
+    },
+    async mounted() {
+      this.init();
+    },
+    emits: ["click", "change"],
+    methods: {
+      setLineLeft() {
+        const tabItem = this.list[this.innerCurrent];
+        if (!tabItem) {
+          return;
+        }
+        let lineOffsetLeft = this.list.slice(0, this.innerCurrent).reduce((total, curr) => total + curr.rect.width, 0);
+        const lineWidth = uni.$u.getPx(this.lineWidth);
+        this.lineOffsetLeft = lineOffsetLeft + (tabItem.rect.width - lineWidth) / 2;
+        if (this.firstTime) {
+          setTimeout(() => {
+            this.firstTime = false;
+          }, 10);
+        }
+      },
+      // nvue下设置滑块的位置
+      animation(x, duration = 0) {
+      },
+      // 点击某一个标签
+      clickHandler(item, index2) {
+        this.$emit("click", {
+          ...item,
+          index: index2
+        });
+        if (item.disabled)
+          return;
+        this.innerCurrent = index2;
+        this.resize();
+        this.$emit("change", {
+          ...item,
+          index: index2
+        });
+      },
+      init() {
+        uni.$u.sleep().then(() => {
+          this.resize();
+        });
+      },
+      setScrollLeft() {
+        const tabRect = this.list[this.innerCurrent];
+        const offsetLeft = this.list.slice(0, this.innerCurrent).reduce((total, curr) => {
+          return total + curr.rect.width;
+        }, 0);
+        const windowWidth = uni.$u.sys().windowWidth;
+        let scrollLeft = offsetLeft - (this.tabsRect.width - tabRect.rect.width) / 2 - (windowWidth - this.tabsRect.right) / 2 + this.tabsRect.left / 2;
+        scrollLeft = Math.min(scrollLeft, this.scrollViewWidth - this.tabsRect.width);
+        this.scrollLeft = Math.max(0, scrollLeft);
+      },
+      // 获取所有标签的尺寸
+      resize() {
+        if (this.list.length === 0) {
+          return;
+        }
+        Promise.all([this.getTabsRect(), this.getAllItemRect()]).then(([tabsRect, itemRect = []]) => {
+          this.tabsRect = tabsRect;
+          this.scrollViewWidth = 0;
+          itemRect.map((item, index2) => {
+            this.scrollViewWidth += item.width;
+            this.list[index2].rect = item;
+          });
+          this.setLineLeft();
+          this.setScrollLeft();
+        });
+      },
+      // 获取导航菜单的尺寸
+      getTabsRect() {
+        return new Promise((resolve) => {
+          this.queryRect("u-tabs__wrapper__scroll-view").then((size) => resolve(size));
+        });
+      },
+      // 获取所有标签的尺寸
+      getAllItemRect() {
+        return new Promise((resolve) => {
+          const promiseAllArr = this.list.map((item, index2) => this.queryRect(
+            `u-tabs__wrapper__nav__item-${index2}`,
+            true
+          ));
+          Promise.all(promiseAllArr).then((sizes) => resolve(sizes));
+        });
+      },
+      // 获取各个标签的尺寸
+      queryRect(el, item) {
+        return new Promise((resolve) => {
+          this.$uGetRect(`.${el}`).then((size) => {
+            resolve(size);
+          });
+        });
+      }
+    }
+  };
+  function _sfc_render$4(_ctx, _cache, $props, $setup, $data, $options) {
+    const _component_u_badge = resolveEasycom(vue.resolveDynamicComponent("u-badge"), __easycom_0$2);
+    return vue.openBlock(), vue.createElementBlock("view", { class: "u-tabs" }, [
+      vue.createElementVNode("view", { class: "u-tabs__wrapper" }, [
+        vue.renderSlot(_ctx.$slots, "left", {}, void 0, true),
+        vue.createElementVNode("view", { class: "u-tabs__wrapper__scroll-view-wrapper" }, [
+          vue.createElementVNode("scroll-view", {
+            "scroll-x": _ctx.scrollable,
+            "scroll-left": $data.scrollLeft,
+            "scroll-with-animation": "",
+            class: "u-tabs__wrapper__scroll-view",
+            "show-scrollbar": false,
+            ref: "u-tabs__wrapper__scroll-view"
+          }, [
+            vue.createElementVNode(
+              "view",
+              {
+                class: "u-tabs__wrapper__nav",
+                ref: "u-tabs__wrapper__nav"
+              },
+              [
+                (vue.openBlock(true), vue.createElementBlock(
+                  vue.Fragment,
+                  null,
+                  vue.renderList(_ctx.list, (item, index2) => {
+                    return vue.openBlock(), vue.createElementBlock("view", {
+                      class: vue.normalizeClass(["u-tabs__wrapper__nav__item", [`u-tabs__wrapper__nav__item-${index2}`, item.disabled && "u-tabs__wrapper__nav__item--disabled"]]),
+                      key: index2,
+                      onClick: ($event) => $options.clickHandler(item, index2),
+                      ref_for: true,
+                      ref: `u-tabs__wrapper__nav__item-${index2}`,
+                      style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.itemStyle), { flex: _ctx.scrollable ? "" : 1 }])
+                    }, [
+                      vue.createElementVNode(
+                        "text",
+                        {
+                          class: vue.normalizeClass([[item.disabled && "u-tabs__wrapper__nav__item__text--disabled"], "u-tabs__wrapper__nav__item__text"]),
+                          style: vue.normalizeStyle([$options.textStyle(index2)])
+                        },
+                        vue.toDisplayString(item[_ctx.keyName]),
+                        7
+                        /* TEXT, CLASS, STYLE */
+                      ),
+                      vue.createVNode(_component_u_badge, {
+                        show: !!(item.badge && (item.badge.show || item.badge.isDot || item.badge.value)),
+                        isDot: item.badge && item.badge.isDot || $options.propsBadge.isDot,
+                        value: item.badge && item.badge.value || $options.propsBadge.value,
+                        max: item.badge && item.badge.max || $options.propsBadge.max,
+                        type: item.badge && item.badge.type || $options.propsBadge.type,
+                        showZero: item.badge && item.badge.showZero || $options.propsBadge.showZero,
+                        bgColor: item.badge && item.badge.bgColor || $options.propsBadge.bgColor,
+                        color: item.badge && item.badge.color || $options.propsBadge.color,
+                        shape: item.badge && item.badge.shape || $options.propsBadge.shape,
+                        numberType: item.badge && item.badge.numberType || $options.propsBadge.numberType,
+                        inverted: item.badge && item.badge.inverted || $options.propsBadge.inverted,
+                        customStyle: "margin-left: 4px;"
+                      }, null, 8, ["show", "isDot", "value", "max", "type", "showZero", "bgColor", "color", "shape", "numberType", "inverted"])
+                    ], 14, ["onClick"]);
+                  }),
+                  128
+                  /* KEYED_FRAGMENT */
+                )),
+                vue.createElementVNode(
+                  "view",
+                  {
+                    class: "u-tabs__wrapper__nav__line",
+                    ref: "u-tabs__wrapper__nav__line",
+                    style: vue.normalizeStyle([{
+                      width: _ctx.$u.addUnit(_ctx.lineWidth),
+                      transform: `translate(${$data.lineOffsetLeft}px)`,
+                      transitionDuration: `${$data.firstTime ? 0 : _ctx.duration}ms`,
+                      height: _ctx.$u.addUnit(_ctx.lineHeight),
+                      background: _ctx.lineColor,
+                      backgroundSize: _ctx.lineBgSize
+                    }])
+                  },
+                  null,
+                  4
+                  /* STYLE */
+                )
+              ],
+              512
+              /* NEED_PATCH */
+            )
+          ], 8, ["scroll-x", "scroll-left"])
+        ]),
+        vue.renderSlot(_ctx.$slots, "right", {}, void 0, true)
+      ])
+    ]);
+  }
+  const __easycom_1 = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["render", _sfc_render$4], ["__scopeId", "data-v-0546c3e4"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-tabs/u-tabs.vue"]]);
+  const _sfc_main$6 = {
+    __name: "index",
+    setup(__props) {
+      let tabs = vue.ref([]);
+      let currentIndex = vue.ref(0);
+      function getList(typeID, pg, ids) {
+        return uni.request({
+          url: "/api.php/provide/vod",
+          data: {
+            ac: "detail",
+            ids,
+            t: typeID,
+            pg: pg || 1
+          }
+        });
+      }
+      function tabChange(data) {
+        currentIndex.value = data.index;
+      }
+      function handlePage(page2 = {}) {
+        let currentPage = Math.abs(page2.page) + 1;
+        return currentPage;
+      }
+      async function setList(data = {}) {
+        let currentTab = tabs.value[data.index];
+        let {
+          data: {
+            list,
+            page: page2,
+            pagecount,
+            total,
+            limit
+          }
+        } = await getList(currentTab.type_id, handlePage(currentTab.page));
+        currentTab.page = {
+          page: page2,
+          pagecount,
+          total,
+          limit
+        };
+        currentTab.vod_lists = currentTab.vod_lists.concat(list);
+      }
+      function scroll(instance, event, vod_item) {
+        const query = uni.createSelectorQuery().in(instance), {
+          detail
+        } = event;
+        query.select(".current-tab").boundingClientRect(({
+          height
+        }) => {
+          if (detail.scrollHeight - height === Math.floor(detail.scrollTop)) {
+            formatAppLog("log", "at pages/index/index.vue:121", "到底了");
+            let load = vue.toRef(vod_item, "load");
+            load.value.status = "loading";
+            setList({
+              index: currentIndex.value
+            });
+            formatAppLog("log", "at pages/index/index.vue:129", currentIndex.value);
+          }
+        }).exec();
+      }
+      async function click(data) {
+        if (data.type_id !== 999 && data.vod_lists.length === 0) {
+          setList(data);
+        }
+      }
+      function imageClick(list) {
+        formatAppLog("log", "at pages/index/index.vue:145", list);
+        getApp().globalData.play = list;
+        uni.navigateTo({
+          url: "/pages/play?age=888"
+        });
+      }
+      uni.request({
+        url: "/api.php/provide/vod",
+        data: {
+          ac: "list"
+        },
+        success({
+          data
+        }) {
+          let tabLists = data.class.map((item, index2) => {
+            item.name = item.type_name;
+            item.vod_lists = [];
+            item.index = index2;
+            item.page = {
+              page: 0,
+              pagecount: 0,
+              total: 0,
+              limit: 0
+            };
+            item.load = {
+              status: "loadmore",
+              line: false
+            };
+            return item;
+          });
+          tabs.value = tabLists;
+          setList(tabLists[currentIndex.value]);
+          formatAppLog("log", "at pages/index/index.vue:183", tabs);
+        }
+      });
+      onPageScroll(() => {
+        formatAppLog("log", "at pages/index/index.vue:188", 888);
+      });
+      onReachBottom(() => {
+        formatAppLog("log", "at pages/index/index.vue:192", "到底了");
+      });
+      return (_ctx, _cache) => {
+        const _component_u_icon = resolveEasycom(vue.resolveDynamicComponent("u-icon"), __easycom_1$1);
+        const _component_u_tabs = resolveEasycom(vue.resolveDynamicComponent("u-tabs"), __easycom_1);
+        return vue.openBlock(), vue.createElementBlock(
+          vue.Fragment,
+          null,
+          [
+            vue.createElementVNode("view", { class: "status_bar" }),
+            vue.createElementVNode("view", { class: "nav" }, [
+              vue.createElementVNode("view", { class: "button-box" }, [
+                vue.createCommentVNode(' <u-icon name="level" size="30"></u-icon> '),
+                vue.createElementVNode("image", { src: "/static/logo.png" })
+              ]),
+              vue.createElementVNode("view", { class: "input-box" }, [
+                vue.createVNode(_component_u_icon, {
+                  name: "search",
+                  size: "20"
+                }),
+                vue.createElementVNode("input", {
+                  placeholder: "",
+                  disabled: true
+                })
+              ]),
+              vue.createElementVNode("view", { class: "button-box" }, [
+                vue.createVNode(_component_u_icon, {
+                  name: "share-square",
+                  size: "30"
+                })
+              ])
+            ]),
+            vue.createElementVNode("view", { class: "content" }, [
+              vue.createVNode(_component_u_tabs, {
+                list: vue.unref(tabs),
+                current: vue.unref(currentIndex),
+                onClick: click,
+                onChange: tabChange
+              }, null, 8, ["list", "current"]),
+              vue.createElementVNode("view", { class: "vod-body" }, [
+                (vue.openBlock(true), vue.createElementBlock(
+                  vue.Fragment,
+                  null,
+                  vue.renderList(vue.unref(tabs), (vod_item, index2) => {
+                    return vue.withDirectives((vue.openBlock(), vue.createElementBlock("scroll-view", {
+                      class: vue.normalizeClass(["vod-body--item", { "current-tab": index2 === vue.unref(currentIndex) }]),
+                      "scroll-y": true,
+                      "show-scrollbar": true,
+                      onScroll: ($event) => scroll(this, $event, vod_item)
+                    }, [
+                      vue.createCommentVNode(' 			<view v-for="vod_list in vod_item.vod_lists">\r\n					<image :src="vod_list.vod_pic" @click="imageClick(vod_list)"></image>\r\n				</view> '),
+                      vue.createElementVNode("view", { class: "cover-box" }, [
+                        (vue.openBlock(true), vue.createElementBlock(
+                          vue.Fragment,
+                          null,
+                          vue.renderList(vod_item.vod_lists, (vod_list) => {
+                            return vue.openBlock(), vue.createElementBlock("view", { class: "cover" }, [
+                              vue.createElementVNode("image", {
+                                src: vod_list.vod_pic,
+                                "lazy-load": true,
+                                "fade-show": true,
+                                onClick: ($event) => imageClick(vod_list),
+                                mode: "scaleToFill"
+                              }, null, 8, ["src", "onClick"]),
+                              vue.createElementVNode(
+                                "text",
+                                null,
+                                vue.toDisplayString(vod_list.vod_name),
+                                1
+                                /* TEXT */
+                              )
+                            ]);
+                          }),
+                          256
+                          /* UNKEYED_FRAGMENT */
+                        ))
+                      ]),
+                      vue.createCommentVNode(' <u-loadmore :status="vod_item.load.status" /> ')
+                    ], 42, ["onScroll"])), [
+                      [vue.vShow, index2 === vue.unref(currentIndex)]
+                    ]);
+                  }),
+                  256
+                  /* UNKEYED_FRAGMENT */
+                ))
+              ])
+            ])
+          ],
+          64
+          /* STABLE_FRAGMENT */
+        );
+      };
+    }
+  };
+  const PagesIndexIndex = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-1cf27b2a"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/index/index.vue"]]);
+  const _sfc_main$5 = {};
+  function _sfc_render$3(_ctx, _cache) {
+    return vue.openBlock(), vue.createElementBlock("div", null, " home ");
+  }
+  const PagesIndexHome = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["render", _sfc_render$3], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/index/home.vue"]]);
+  const props$2 = {
+    props: {
+      // 是否显示组件
+      show: {
+        type: Boolean,
+        default: () => uni.$u.props.loadingIcon.show
+      },
+      // 颜色
+      color: {
+        type: String,
+        default: () => uni.$u.props.loadingIcon.color
+      },
+      // 提示文字颜色
+      textColor: {
+        type: String,
+        default: () => uni.$u.props.loadingIcon.textColor
+      },
+      // 文字和图标是否垂直排列
+      vertical: {
+        type: Boolean,
+        default: () => uni.$u.props.loadingIcon.vertical
+      },
+      // 模式选择，circle-圆形，spinner-花朵形，semicircle-半圆形
+      mode: {
+        type: String,
+        default: () => uni.$u.props.loadingIcon.mode
+      },
+      // 图标大小，单位默认px
+      size: {
+        type: [String, Number],
+        default: () => uni.$u.props.loadingIcon.size
+      },
+      // 文字大小
+      textSize: {
+        type: [String, Number],
+        default: () => uni.$u.props.loadingIcon.textSize
+      },
+      // 文字内容
+      text: {
+        type: [String, Number],
+        default: () => uni.$u.props.loadingIcon.text
+      },
+      // 动画模式
+      timingFunction: {
+        type: String,
+        default: () => uni.$u.props.loadingIcon.timingFunction
+      },
+      // 动画执行周期时间
+      duration: {
+        type: [String, Number],
+        default: () => uni.$u.props.loadingIcon.duration
+      },
+      // mode=circle时的暗边颜色
+      inactiveColor: {
+        type: String,
+        default: () => uni.$u.props.loadingIcon.inactiveColor
+      }
+    }
+  };
+  const _sfc_main$4 = {
+    name: "u-loading-icon",
+    mixins: [mpMixin, mixin, props$2],
+    data() {
+      return {
+        // Array.form可以通过一个伪数组对象创建指定长度的数组
+        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/from
+        array12: Array.from({
+          length: 12
+        }),
+        // 这里需要设置默认值为360，否则在安卓nvue上，会延迟一个duration周期后才执行
+        // 在iOS nvue上，则会一开始默认执行两个周期的动画
+        aniAngel: 360,
+        // 动画旋转角度
+        webviewHide: false,
+        // 监听webview的状态，如果隐藏了页面，则停止动画，以免性能消耗
+        loading: false
+        // 是否运行中，针对nvue使用
+      };
+    },
+    computed: {
+      // 当为circle类型时，给其另外三边设置一个更轻一些的颜色
+      // 之所以需要这么做的原因是，比如父组件传了color为红色，那么需要另外的三个边为浅红色
+      // 而不能是固定的某一个其他颜色(因为这个固定的颜色可能浅蓝，导致效果没有那么细腻良好)
+      otherBorderColor() {
+        const lightColor = uni.$u.colorGradient(this.color, "#ffffff", 100)[80];
+        if (this.mode === "circle") {
+          return this.inactiveColor ? this.inactiveColor : lightColor;
+        } else {
+          return "transparent";
+        }
+      }
+    },
+    watch: {
+      show(n) {
+      }
+    },
+    mounted() {
+      this.init();
+    },
+    methods: {
+      init() {
+        setTimeout(() => {
+          this.show && this.addEventListenerToWebview();
+        }, 20);
+      },
+      // 监听webview的显示与隐藏
+      addEventListenerToWebview() {
+        const pages2 = getCurrentPages();
+        const page2 = pages2[pages2.length - 1];
+        const currentWebview = page2.$getAppWebview();
+        currentWebview.addEventListener("hide", () => {
+          this.webviewHide = true;
+        });
+        currentWebview.addEventListener("show", () => {
+          this.webviewHide = false;
+        });
+      }
+    }
+  };
+  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
+    return _ctx.show ? (vue.openBlock(), vue.createElementBlock(
+      "view",
+      {
+        key: 0,
+        class: vue.normalizeClass(["u-loading-icon", [_ctx.vertical && "u-loading-icon--vertical"]]),
+        style: vue.normalizeStyle([_ctx.$u.addStyle(_ctx.customStyle)])
+      },
+      [
+        !$data.webviewHide ? (vue.openBlock(), vue.createElementBlock(
+          "view",
+          {
+            key: 0,
+            class: vue.normalizeClass(["u-loading-icon__spinner", [`u-loading-icon__spinner--${_ctx.mode}`]]),
+            ref: "ani",
+            style: vue.normalizeStyle({
+              color: _ctx.color,
+              width: _ctx.$u.addUnit(_ctx.size),
+              height: _ctx.$u.addUnit(_ctx.size),
+              borderTopColor: _ctx.color,
+              borderBottomColor: $options.otherBorderColor,
+              borderLeftColor: $options.otherBorderColor,
+              borderRightColor: $options.otherBorderColor,
+              "animation-duration": `${_ctx.duration}ms`,
+              "animation-timing-function": _ctx.mode === "semicircle" || _ctx.mode === "circle" ? _ctx.timingFunction : ""
+            })
+          },
+          [
+            _ctx.mode === "spinner" ? (vue.openBlock(true), vue.createElementBlock(
+              vue.Fragment,
+              { key: 0 },
+              vue.renderList($data.array12, (item, index2) => {
+                return vue.openBlock(), vue.createElementBlock("view", {
+                  key: index2,
+                  class: "u-loading-icon__dot"
+                });
+              }),
+              128
+              /* KEYED_FRAGMENT */
+            )) : vue.createCommentVNode("v-if", true)
+          ],
+          6
+          /* CLASS, STYLE */
+        )) : vue.createCommentVNode("v-if", true),
+        _ctx.text ? (vue.openBlock(), vue.createElementBlock(
+          "text",
+          {
+            key: 1,
+            class: "u-loading-icon__text",
+            style: vue.normalizeStyle({
+              fontSize: _ctx.$u.addUnit(_ctx.textSize),
+              color: _ctx.textColor
+            })
+          },
+          vue.toDisplayString(_ctx.text),
+          5
+          /* TEXT, STYLE */
+        )) : vue.createCommentVNode("v-if", true)
+      ],
+      6
+      /* CLASS, STYLE */
+    )) : vue.createCommentVNode("v-if", true);
+  }
+  const __easycom_0$1 = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["render", _sfc_render$2], ["__scopeId", "data-v-00752c6d"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-loading-icon/u-loading-icon.vue"]]);
   const props$1 = {
     props: {
       // 是否细边框
@@ -1533,7 +1567,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  const _sfc_main$2 = {
+  const _sfc_main$3 = {
     name: "u-button",
     mixins: [mpMixin, mixin, props$1],
     data() {
@@ -1657,9 +1691,9 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_u_loading_icon = resolveEasycom(vue.resolveDynamicComponent("u-loading-icon"), __easycom_0$1);
-    const _component_u_icon = resolveEasycom(vue.resolveDynamicComponent("u-icon"), __easycom_1);
+    const _component_u_icon = resolveEasycom(vue.resolveDynamicComponent("u-icon"), __easycom_1$1);
     return vue.openBlock(), vue.createElementBlock("button", {
       "hover-start-time": Number(_ctx.hoverStartTime),
       "hover-stay-time": Number(_ctx.hoverStayTime),
@@ -1735,13 +1769,16 @@ if (uni.restoreGlobal) {
       ))
     ], 46, ["hover-start-time", "hover-stay-time", "form-type", "open-type", "app-parameter", "hover-stop-propagation", "send-message-title", "send-message-path", "lang", "data-name", "session-from", "send-message-img", "show-message-card", "hover-class"]);
   }
-  const __easycom_0 = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render], ["__scopeId", "data-v-461e713c"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-button/u-button.vue"]]);
-  const _sfc_main$1 = {
+  const __easycom_0 = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["render", _sfc_render$1], ["__scopeId", "data-v-461e713c"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/node_modules/uview-plus/components/u-button/u-button.vue"]]);
+  const _sfc_main$2 = {
     __name: "play",
     setup(__props) {
       var vodPlayList = vue.ref([]);
       let currentList = vue.ref([]);
       let src = vue.ref("");
+      vue.computed(() => {
+        return "http://bf.wgudu.com/player/?url=" + src.value;
+      });
       function parsePlayUrl(url2 = "") {
         let playList = url2.split("$$$").map((vodUrls) => {
           return vodUrls.split("#").map((item) => {
@@ -1755,17 +1792,17 @@ if (uni.restoreGlobal) {
         return playList;
       }
       function lineClick(item) {
-        formatAppLog("log", "at pages/play.vue:49", item);
+        formatAppLog("log", "at pages/play.vue:60", item);
         currentList.value = item;
       }
       function line(item) {
-        formatAppLog("log", "at pages/play.vue:54", item);
+        formatAppLog("log", "at pages/play.vue:65", item);
         src.value = item.url;
       }
       onLoad(function() {
         let vodPlayUrls = getApp().globalData.play.vod_play_url;
         vodPlayList.value = parsePlayUrl(vodPlayUrls);
-        formatAppLog("log", "at pages/play.vue:61", vodPlayList);
+        formatAppLog("log", "at pages/play.vue:72", vodPlayList);
       });
       return (_ctx, _cache) => {
         const _component_u_button = resolveEasycom(vue.resolveDynamicComponent("u-button"), __easycom_0);
@@ -1817,10 +1854,106 @@ if (uni.restoreGlobal) {
       };
     }
   };
-  const PagesPlay = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-b1095fd8"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/play.vue"]]);
+  const PagesPlay = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["__scopeId", "data-v-b1095fd8"], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/play.vue"]]);
+  const _sfc_main$1 = {
+    data() {
+      var imgs = ["shuijiao", "muwu", "cbd"];
+      var list = [];
+      for (let i = 0; i < 20; i++) {
+        list.push({
+          src: `https://img-cdn-qiniu.dcloud.net.cn/uniapp/images/${imgs[i % 3]}.jpg`,
+          show: false,
+          loaded: false
+        });
+      }
+      return {
+        windowHeight: 0,
+        placeholderSrc: "../../static/60x60.png",
+        list,
+        show: false
+      };
+    },
+    methods: {
+      load() {
+        uni.createSelectorQuery().selectAll(".lazy").boundingClientRect((images) => {
+          images.forEach((image2, index2) => {
+            formatAppLog("log", "at pages/lazy.vue:60", image2);
+            if (image2.top <= this.windowHeight) {
+              this.list[image2.dataset.index].show = true;
+            }
+          });
+        }).exec();
+      },
+      imageLoad(e) {
+        this.list[e.target.dataset.index].loaded = true;
+      }
+    },
+    onLoad() {
+      this.windowHeight = uni.getSystemInfoSync().windowHeight;
+    },
+    onShow() {
+      if (!this.show) {
+        this.show = true;
+        setTimeout(() => {
+          this.load();
+        }, 100);
+      }
+    },
+    onPageScroll() {
+      this.load();
+    }
+  };
+  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock("view", null, [
+      vue.createElementVNode("view", { class: "uni-padding-wrap" }, [
+        vue.createElementVNode("view", { class: "uni-hello-text" }, [
+          vue.createTextVNode(" 延迟加载的理念：页面初始化时，暂不加载处于屏幕可见区域之外的图片。该方案会有如下几大好处： "),
+          vue.createElementVNode("text", null, "\\n加快页面渲染速度"),
+          vue.createElementVNode("text", null, "\\n提升页面滚动性能"),
+          vue.createElementVNode("text", null, "\\n默认不下载屏幕外的图片，减少网络流量")
+        ])
+      ]),
+      vue.createElementVNode("view", { class: "uni-list" }, [
+        (vue.openBlock(true), vue.createElementBlock(
+          vue.Fragment,
+          null,
+          vue.renderList($data.list, (item, index2) => {
+            return vue.openBlock(), vue.createElementBlock("view", {
+              class: "uni-list-cell",
+              "hover-class": "uni-list-cell-hover",
+              key: index2
+            }, [
+              vue.createElementVNode("view", { class: "uni-media-list" }, [
+                vue.createElementVNode("view", { class: "uni-media-list-logo" }, [
+                  vue.createElementVNode("image", {
+                    class: vue.normalizeClass(["image", { lazy: !item.show }]),
+                    "data-index": index2,
+                    onLoad: _cache[0] || (_cache[0] = (...args) => $options.imageLoad && $options.imageLoad(...args)),
+                    src: item.show ? item.src : ""
+                  }, null, 42, ["data-index", "src"]),
+                  vue.createElementVNode("image", {
+                    class: vue.normalizeClass(["image placeholder", { loaded: item.loaded }]),
+                    src: $data.placeholderSrc
+                  }, null, 10, ["src"])
+                ]),
+                vue.createElementVNode("view", { class: "uni-media-list-body" }, [
+                  vue.createElementVNode("view", { class: "uni-media-list-text-top" }, "主标题"),
+                  vue.createElementVNode("view", { class: "uni-media-list-text-bottom uni-ellipsis" }, "列表二级标题")
+                ])
+              ])
+            ]);
+          }),
+          128
+          /* KEYED_FRAGMENT */
+        ))
+      ])
+    ]);
+  }
+  const PagesLazy = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render], ["__file", "C:/Users/admin/Desktop/uni-app/v2_vod/pages/lazy.vue"]]);
   __definePage("pages/index/index", PagesIndexIndex);
   __definePage("pages/index/home", PagesIndexHome);
   __definePage("pages/play", PagesPlay);
+  __definePage("pages/lazy", PagesLazy);
   const BASEURL = "http://ys.wgudu.com";
   uni.addInterceptor("request", {
     invoke(args) {

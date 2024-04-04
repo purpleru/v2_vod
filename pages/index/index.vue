@@ -1,4 +1,18 @@
 <template>
+	<view class="status_bar"></view>
+	<view class="nav">
+		<view class="button-box">
+			<!-- <u-icon name="level" size="30"></u-icon> -->
+			<image src="../../static/logo.png"></image>
+		</view>
+		<view class="input-box">
+			<u-icon name="search" size="20"></u-icon>
+			<input placeholder="" :disabled="true" />
+		</view>
+		<view class="button-box">
+			<u-icon name="share-square" size="30"></u-icon>
+		</view>
+	</view>
 	<view class="content">
 		<u-tabs :list="tabs" :current="currentIndex" @click="click" @change="tabChange"></u-tabs>
 		<view class="vod-body">
@@ -12,7 +26,7 @@
 
 				<view class="cover-box">
 					<view class="cover" v-for="vod_list in vod_item.vod_lists">
-						<image :src="vod_list.vod_pic" @click="imageClick(vod_list)" mode="scaleToFill"></image>
+						<image :src="vod_list.vod_pic" :lazy-load="true" :fade-show="true" @click="imageClick(vod_list)" mode="scaleToFill"></image>
 						<text>{{vod_list.vod_name}}</text>
 					</view>
 				</view>
@@ -180,10 +194,64 @@
 </script>
 
 <style scoped lang="scss">
-	.content,
+	.status_bar {
+		height: var(--status-bar-height);
+		width: 100%;
+	}
+
+
+	.nav {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		height: 44px;
+		// background-color: #ccc;
+	}
+
+	.nav .input-box {
+		display: flex;
+		width: 70%;
+		align-items: center;
+		padding: 4px 6px;
+		font-size: 14px;
+		// border: 1px solid #f5f7fa;
+		border-radius: 4px;
+		background-color: #f5f7fa;
+		overflow: hidden;
+	}
+
+	.nav input {
+		height: 20px;
+		margin-left: 6px;
+		font-size: 14px;
+	}
+
+	.nav .button-box {
+		padding: 4px;
+	}
+
+	.nav .button-box image {
+		display: block;
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+	}
+	
+	.nav .button-box:first-of-type{
+		margin-left: 6px;
+	}
+	
+	.nav .button-box:last-of-type{
+		margin-right: 6px;
+	}
+
 	uni-page-body {
-		position: relative;
 		height: 100%;
+	}
+
+	.content {
+		position: relative;
+		height: calc(100% - var(--status-bar-height) - 44px);
 		overflow: hidden;
 	}
 
@@ -228,8 +296,8 @@
 		height: 330rpx;
 		border-radius: 6px;
 	}
-	
-	.cover text{
+
+	.cover text {
 		display: block;
 		width: 100%;
 		font-size: 14px;
