@@ -1169,7 +1169,8 @@ if (uni.restoreGlobal) {
                 list: vue.unref(tabs),
                 current: vue.unref(currentIndex),
                 onClick: click,
-                onChange: tabChange
+                onChange: tabChange,
+                lineColor: "#e74032"
               }, null, 8, ["list", "current"]),
               vue.createElementVNode("view", { class: "vod-body" }, [
                 (vue.openBlock(true), vue.createElementBlock(

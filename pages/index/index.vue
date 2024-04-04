@@ -14,7 +14,7 @@
 		</view>
 	</view>
 	<view class="content">
-		<u-tabs :list="tabs" :current="currentIndex" @click="click" @change="tabChange"></u-tabs>
+		<u-tabs :list="tabs" :current="currentIndex" @click="click" @change="tabChange" lineColor="#e74032"></u-tabs>
 		<view class="vod-body">
 			<scroll-view class="vod-body--item" :class="{'current-tab':index === currentIndex}"
 				v-for="(vod_item,index) in tabs" v-show="index === currentIndex" :scroll-y="true" :show-scrollbar="true"

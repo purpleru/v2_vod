@@ -29,13 +29,32 @@
 	"tabBar": {
 		"list": [{
 				"pagePath": "pages/index/index",
-				"text": "首页"
+				"text": "首页",
+				"iconfont": {
+					"text": "\ue965",
+					"selectedText": "\ue964",
+					"fontSize": "20px",
+					"selectedColor": "#e74032",
+					"color": "#626365"
+				}
 			},
 			{
 				"pagePath": "pages/index/home",
-				"text": "我的"
+				"text": "我的",
+				"iconfont": {
+					"text": "\ue628",
+					"selectedText": "\ue614",
+					"fontSize": "20px",
+					"selectedColor": "#e74032",
+					"color": "#626365"
+				}
 			}
-		]
+		],
+		"iconfontSrc": "/static/uview-plus-icon/iconfont.ttf",
+		"selectedColor": "#e74032",
+		"color": "#626365",
+		"fontSize": "12px",
+		"spacing": "2px"
 	},
 	"easycom": {
 		// 注意一定要放在custom里，否则无效，https://ask.dcloud.net.cn/question/131175

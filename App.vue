@@ -24,4 +24,10 @@
 		clear: both;
 		content: '';
 	}
+	
+	.uni-tabbar__item .uni-tabbar__icon{
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
 </style>

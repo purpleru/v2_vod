@@ -100,24 +100,39 @@
     },
     "tabBar": {
       "position": "bottom",
-      "color": "#999",
-      "selectedColor": "#007aff",
+      "color": "#626365",
+      "selectedColor": "#e74032",
       "borderStyle": "rgba(0,0,0,0.4)",
       "blurEffect": "none",
-      "fontSize": "10px",
+      "fontSize": "12px",
       "iconWidth": "24px",
-      "spacing": "3px",
+      "spacing": "2px",
       "height": "50px",
       "list": [
         {
           "pagePath": "pages/index/index",
-          "text": "首页"
+          "text": "首页",
+          "iconfont": {
+            "text": "",
+            "selectedText": "",
+            "fontSize": "20px",
+            "selectedColor": "#e74032",
+            "color": "#626365"
+          }
         },
         {
           "pagePath": "pages/index/home",
-          "text": "我的"
+          "text": "我的",
+          "iconfont": {
+            "text": "",
+            "selectedText": "",
+            "fontSize": "20px",
+            "selectedColor": "#e74032",
+            "color": "#626365"
+          }
         }
       ],
+      "iconfontSrc": "/static/uview-plus-icon/iconfont.ttf",
       "selectedIndex": 0,
       "shown": true,
       "child": [
